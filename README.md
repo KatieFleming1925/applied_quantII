@@ -1,4 +1,4 @@
 # applied_quantII
 Katie Fleming
-Assignments for Applied Quantitative Methods II
-List of repository: Assignments for AQMSS II
+These are my assignments for Applied Quantitative Methods II
+List for repository: Assignments for AQMSS II
