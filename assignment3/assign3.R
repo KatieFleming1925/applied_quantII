@@ -1,20 +1,111 @@
-#PART 2: TAKE-HOME EXERCISES - STAR - High School Graduation
-#2.1: Data preparation
+# PART 1: IN-CLASS
+## Problem 1.1: Setup and data prep
+## 1.1.a: Loading dataset and definining key variables.
+anes=read.csv("data/anes_timeseries_2020.csv")
+anes1 = anes %>%
+  transmute(
+    voted=ifelse(V202109x < 0, NA, V202109x),
+    age = ifelse(V201507x < 0, NA, V201507x),
+    female = case_when(V201600 == 2 ~ 1, V201600 == 1 ~ 0, TRUE ~ NA_real_),
+    education = case_when(
+      V201511x == 1 ~ 10, V201511x == 2 ~ 12, V201511x == 3 ~ 14,
+      V201511x == 4 ~ 16, V201511x == 5 ~ 20, TRUE ~ NA_real_),
+      income = ifelse(V201617x < 0, NA, V201617x),
+      party_id = ifelse(V201231x < 0, NA, V201231x)
+    )
+## 1.1.b: Drop observations with missing values on any of these variables. How many observations remain?
+df = na.omit(anes1)
+nrow(df)
+### ANSWER: 6733 observations remain after we drop the NA values.
+## 1.1.c: Compute the overall turnout rate (proportion of voted == 1) and print summary statistics for all variables.
+mean(df$voted)
+### overall turnout rate is 0.8609832
+summary(df)
+
+# PROBLEM 1.2: EXPLORATORY VISUALIZATION
+## 1.2.a: Create a bar chart showing the turnout rate by education level (hint: compute the mean of voted for each value of education, then use geom col()).
+turnout_by_edu=df%>%
+  group_by(education)%>%
+  summarize(turnout=mean(voted))
+ggplot(turnout_by_edu, aes(x=factor(education), y=turnout))+geom_col()+labs(x="Years of Ed", y="Turnout rate")
+
+## 1.2.b: In a comment, describe the pattern. Does turnout increase with education?
+### ANSWER: Voter turnout does increase with level of education.
+
+# PROBLEM 1.3: LINEAR PROBABILITY MODEL
+## 1.3.a: Estimate an LPM with voted as the outcome and age, education, income, and female as predictors.
+lpm = lm(voted ~ age + education + income + female, data = df)
+## 1.3.b: Print the results using broom tidy.
+tidy(lpm)
+## 1.3.c: Interpret the coefficient on education in a comment. What does it mean in terms of probability?
+### ANSWER: The coefficient on education (0.0193) represents the estimated change in the probability of voting with each extra year of education as long as we hold the other variables constant.
+## 1.3.d: Check the predicted probabilities: how many are below 0 or above 1? Report minimum and maximum predicted values.
+preds_lpm=predict(lpm)
+sum(preds_lpm < 0)
+### This shows that there are 0 probabilities below 0.
+sum(preds_lpm > 1)
+### This shows that there are 802 probabilities above 1.
+range(preds_lpm)
+### This shows that the minimum is 0.5150876. The maximum 1.1708206. 
+
+# PROBLEM 1.4: LOGISTIC REGRESSION
+## 1.4.a: Estimate a logit model with the same predictors.
+logit = glm(voted ~ age + education + income + female, family = binomial, data = df)
+## 1.4.b: Print the results using tidy.
+tidy(logit)
+## 1.4.c: Compute the odds ratios using exp(coef(logit)). Interpret the odds ratio for education in a comment.
+exp(coef(logit))
+### ANSWER: The odds ratio for education (1.24898963) shows how many times the odds of voting are multiplied with each increment of education year. 
+## 1.4.d: Verify that all predicted probabilities are between 0 and 1.
+preds_logit = predict(logit, type = "response")
+range(preds_logit)
+### ANSWER: The minimum here is 0.2511085 and the maximum is 0.9945010, so all predicted probabilities are bounded (i.e., between 0 and 1).
+
+# PROBLEM 1.5: COMPARING LPM AND LOGIT
+## 1.5.a: Compute average marginal effects for the logit model using.
+avg_slopes(logit)
+## 1.5.b: Compare the AMEs to the LPM coefficients. How similar are they? Discuss in a comment.
+### COMMENT: Both the AMEs in the logit model and the LPM coefficients are similar to one another. Both models capture the same relationship between education level and voter turnout.
+## 1.5.c: Create a table with modelsummary() showing the LPM and logit side by side. Use robust standard errors for the LPM:
+modelsummary(list("LPM" = lpm, "Logit" = logit), vcov = list("robust", NULL), output = "markdown")
+
+# PROBLEM 1.6: PREDICTED PROBABILITIES
+## 1.6.a: Use plot predictions(logit, condition = "education") to plot the predicted probability of voting across education levels. Save the plot.
+p1 = plot_predictions(logit, condition = "education")
+p1
+## 1.6.b: Create a second plot showing predicted probabilities across age for men and women separately: plot predictions(logit, condition = c("age", "female")).
+p2 = plot_predictions(logit, condition = c("age", "female"))
+p2
+ggsave("pred_prob_age_gender.png", p2, width = 6, height = 4)
+## 1.6.c: In a comment, describe the patterns. How does the effect differ from the effect of education?
+### ANSWER: There is a clear positive relationship between education and turnout, but there is also a positive relationship between age and turnout. Gender does not seem to change the relationship as both men and women still exhibit this positive relationship when we control for gender.
+
+# PROBLEM 1.7: PRESENTING RESULTS
+## 1.7.a: Create a coefficient plot comparing the LPM and logit models using modelplot(). 
+p3 = modelplot(list("LPM" = lpm, "Logit" = logit), vcov = list("robust", NULL))
+## 1.7.b: Save the plot.
+p3
+## 1.7.c: In a comment: for this dataset, do the LPM and logit lead to different substantive conclusions? When might the differences matter?
+### ANSWER: Here, the LPM and logit both lead to similar substantive conclusions in that both models show a positive relationship between voter turnout and age, education level, and income. The differences would matter more when predicted probabilities are close to boundaries. 
+
+
+# PART 2: TAKE-HOME EXERCISES - STAR - High School Graduation
+## PROBLEM 2.1: Data preparation
 library(tidyr)
 library(dplyr)
-#2.1.a: Load star csv and create the same factor variables as in Assignment 2: classtype with labels "Small", "Regular", "Regular+Aide", and race with labels "White", "Black", etc.
+## 2.1.a: Load star csv and create the same factor variables as in Assignment 2: classtype with labels "Small", "Regular", "Regular+Aide", and race with labels "White", "Black", etc.
 star=read.csv("data/star.csv")
 star$classtype<-factor(star$classtype, levels=c(1,2,3), labels = c("Small", "Regular", "Regular+Aide"))
 star$race<-factor(star$race, levels=c(1,2,3,4,5,6), labels = c("White", "Black", "Asian", "Hispanic", "Native American", "Other"))
-#2.1.b: Create a binary variable small equal to 1 if the student was in a small class and 0 if otherwise.
+## 2.1.b: Create a binary variable small equal to 1 if the student was in a small class and 0 if otherwise.
 star$small<-ifelse(star$classtype=="Small", 1,0)
-#2.1.c: Drop observations with missing values on hsgrad. How many observations remain?
+## 2.1.c: Drop observations with missing values on hsgrad. How many observations remain?
 star1 <- star %>%
   drop_na(hsgrad) %>%
   mutate(
     race = factor(race, levels = c("White", "Black", "Asian", "Hispanic", "Native American", "Other")), small = as.numeric(small))
-#This shows that 3047 observations remain after omitting those with an NA value in hsgrad.
-#2.1.d: Compute the high school graduation rate overall and by class type. 
+### This shows that 3047 observations remain after omitting those with an NA value in hsgrad.
+## 2.1.d: Compute the high school graduation rate overall and by class type. 
 mean(star1$hsgrad)
 star1%>%
   group_by(classtype)%>%
