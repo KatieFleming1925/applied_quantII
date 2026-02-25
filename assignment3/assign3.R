@@ -1,6 +1,7 @@
 #PART 2: TAKE-HOME EXERCISES - STAR - High School Graduation
 #2.1: Data preparation
 library(tidyr)
+library(dplyr)
 #2.1.a: Load star csv and create the same factor variables as in Assignment 2: classtype with labels "Small", "Regular", "Regular+Aide", and race with labels "White", "Black", etc.
 star=read.csv("data/star.csv")
 star$classtype<-factor(star$classtype, levels=c(1,2,3), labels = c("Small", "Regular", "Regular+Aide"))
@@ -33,7 +34,7 @@ install.packages("rlang")
 library(rlang)
 
 #2.2.d: Compute the AME from the logit using avg_slopes(logit1). How does it compare to the LPM coefficient?
-avg_slopes(logit1)
+marginaleffects::avg_slopes(logit1)
 
 #PROBLEM 2.3 ADDING CONTROLS
 #2.3.a: Estimate both LPM and logit with controls
@@ -73,5 +74,40 @@ results
 
 logit4_p2=glm(hsgrad~small+yearssmall, family=binomial, data=star1)
 install.packages("ggplot2", type = "binary", lib="~/R/library")
-library(ggplot2, lib.loc="~/R/library")
+library(ggplot2)
 plot1_2<-plot_predictions(logit4_p2, condition=c("yearssmall", "small"))
+plot1_2
+
+
+#PROBLEM 2.5 INTERACTIONS
+#2.5.a: Does the small class effect on graduation differ by race? Estimate:
+logit3=glm(hsgrad~small*race+yearssmall, family=binomial, data=star1)
+#2.5.b: Use avg slopes to compute the marginal effect of small separately for each racial group.
+marginaleffects::avg_slopes(logit3, variables="small", by="race")
+#2.5.c: In a comment, discuss: Is the small class effect larger for some groups than others?
+
+#PROBLEM 2.6 PRESENTING RESULTS AND DISCUSSION
+#2.6.a: Create a table with modelsummary() comparing all four models (LPM bivariate, LPM controlled, logit bivariate, logit controlled). Use robust standard errors.
+install.packages("modelsummary", type = "binary")
+library(modelsummary)
+modelsummary(
+  list(
+    "LPM Bivariate"=lpm1, 
+    "Logit Bivariate"=logit1, 
+    "LPM with controls" = lpm2, 
+    "Logit with controls"=logit2
+    ),
+    vcov=list("robust", NULL, "robust", NULL),
+    output="assignment3/modeltable.html"
+  )
+
+library(modelsummary)
+library(ggplot2)
+modelplot(
+  list(
+    "LPM Bivariate" = lpm1,
+    "Logit Bivariate" = logit1,
+    "LPM with controls" = lpm2,
+    "Logit with controls" = logit2
+  )
+)
