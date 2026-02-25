@@ -20,15 +20,15 @@ star1%>%
   group_by(classtype)%>%
   summarize(classtyperate=mean(hsgrad))
 
-# 2.2 LPM AND LOGIT
+# PROBLEM 2.2 LPM AND LOGIT
 ## 2.2.a: Estimate an LPM predicting hsgrad from small:
 lpm1=lm(hsgrad~small, data=star1)
-print(lpm1)
+summary(lpm1)
 ## 2.2.b: Estimate a logit model with the same predictor:
 logit1=glm(hsgrad~small, family=binomial, data=star1)
-print(logit1)
+summary(logit1)
 ## 2.2.c: Interpret the LPM coeffciient on small: what is the estimated difference in graduation probability between small and non-small classes?
-
+### ANSWER: The LPM coefficient on small is -0.075556 which means that the graduation rate for students in smaller classes is 7.6 percentage points lower than students in non-small classes. 
 
 install.packages("rlang")
 library(rlang)
@@ -44,8 +44,10 @@ summary(lpm2)
 logit2=glm(hsgrad~small+race+yearssmall,family=binomial, data=star1)
 summary(logit2)
 ## 2.3.b: Compare the coefficient on small between the bivariate and controlled models. Does it change much? What does this tell you about the randomization?
-
-## 2.3.c:
+### ANSWER: There is no substantive change between the respective coefficients of the models, which means that randomization was successful in that other characteristics (e.g., race, years spent in a small class) did not influence the randomization.
+## 2.3.c: Interpret the coefficient on yearssmall from the logit model. Use avg slopes to convert to marginal effect.
+avg_slopes(logit2, variables = "yearssmall")
+### ANSWER: The coefficient on yearssmall is 0.0283, which means that each additional year a student spends in a small class will increase the probability of their high school graduation by 2.83 percent. 
 
 # PROBLEM 2.4 PREDICTED PROBABILITIES
 ## 2.4.a: Using the controlled logit model, compute predicted graduation probabilities for a White student in a small class with 3 years in a small class and a Black student in a regular class with 0 years in a small class. 
@@ -85,6 +87,7 @@ logit3=glm(hsgrad~small*race+yearssmall, family=binomial, data=star1)
 ## 2.5.b: Use avg slopes to compute the marginal effect of small separately for each racial group.
 marginaleffects::avg_slopes(logit3, variables="small", by="race")
 ## 2.5.c: In a comment, discuss: Is the small class effect larger for some groups than others?
+### ANSWER: Yes, the effect of a small class is strongest among Black students. Race seems to play a role in educational success, especially when coupled with class size.
 
 # PROBLEM 2.6 PRESENTING RESULTS AND DISCUSSION
 ## 2.6.a: Create a table with modelsummary() comparing all four models (LPM bivariate, LPM controlled, logit bivariate, logit controlled). Use robust standard errors.
@@ -111,3 +114,4 @@ modelplot(
     "Logit with controls" = logit2
   )
 )
+## Problem 2.6.c: In a comment, discuss: What does the STAR data suggest about the effect of small class sizes on high school gaduation? How do the LPM and logit results compare? Do they tell a similar or different story? Why is this experimental evidence more credible than an observational study?
