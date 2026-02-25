@@ -20,44 +20,45 @@ star1%>%
   group_by(classtype)%>%
   summarize(classtyperate=mean(hsgrad))
 
-#2.2 LPM AND LOGIT
-#2.2.a: Estimate an LPM predicting hsgrad from small:
+# 2.2 LPM AND LOGIT
+## 2.2.a: Estimate an LPM predicting hsgrad from small:
 lpm1=lm(hsgrad~small, data=star1)
 print(lpm1)
-#2.2.b: Estimate a logit model with the same predictor:
+## 2.2.b: Estimate a logit model with the same predictor:
 logit1=glm(hsgrad~small, family=binomial, data=star1)
 print(logit1)
-#2.2.c: Interpret the LPM coeffciient on small: what is the estimated difference in graduation probability between small and non-small classes?
+## 2.2.c: Interpret the LPM coeffciient on small: what is the estimated difference in graduation probability between small and non-small classes?
 
 
 install.packages("rlang")
 library(rlang)
 
-#2.2.d: Compute the AME from the logit using avg_slopes(logit1). How does it compare to the LPM coefficient?
+## 2.2.d: Compute the AME from the logit using avg_slopes(logit1). How does it compare to the LPM coefficient?
 marginaleffects::avg_slopes(logit1)
 
-#PROBLEM 2.3 ADDING CONTROLS
-#2.3.a: Estimate both LPM and logit with controls
+# PROBLEM 2.3 ADDING CONTROLS
+## 2.3.a: Estimate both LPM and logit with controls
 star1$race<-factor(star1$race, levels=c("White", "Black", "Asian", "Hispanic", "Native American", "Other"))
 lpm2=lm(hsgrad~small+race+yearssmall, data=star1)
 summary(lpm2)
 logit2=glm(hsgrad~small+race+yearssmall,family=binomial, data=star1)
 summary(logit2)
-#2.3.b: Compare the coefficient on small between the bivariate and controlled models. Does it change much? What does this tell you about the randomization?
+## 2.3.b: Compare the coefficient on small between the bivariate and controlled models. Does it change much? What does this tell you about the randomization?
 
-#2.3.c:
+## 2.3.c:
 
-#PROBLEM 2.4 PREDICTED PROBABILITIES
-#2.4.a: Using the controlled logit model, compute predicted graduation probabilities for a White student in a small class with 3 years in a small class and a Black student in a regular class with 0 years in a small class. 
+# PROBLEM 2.4 PREDICTED PROBABILITIES
+## 2.4.a: Using the controlled logit model, compute predicted graduation probabilities for a White student in a small class with 3 years in a small class and a Black student in a regular class with 0 years in a small class. 
 library(marginaleffects)
-#creating new df for just these two students
+### creating new df for just these two students
 newdata<-data.frame(
   classtype = c("Small", "Regular"),                  
   small = c(1, 0),
   yearssmall = c(3, 0),
   race = c("White", "Black"))
-
+### need to make sure race is factor variable
 newdata$race<-factor(newdata$race, levels=levels(star1$race))
+### now i use predictions
 pred<-predict(logit2, newdata=newdata, type="response", se.fit=TRUE)
 fit_pred<-pred$fit
 se_pred<-pred$se.fit
@@ -69,25 +70,24 @@ results<-data.frame(
   lower_CI = lower_int,
   upper_CI = upper_int
 )
-
+### need to see my results
 results
-
+### now constructing the plot 
 logit4_p2=glm(hsgrad~small+yearssmall, family=binomial, data=star1)
 install.packages("ggplot2", type = "binary", lib="~/R/library")
 library(ggplot2)
 plot1_2<-plot_predictions(logit4_p2, condition=c("yearssmall", "small"))
 plot1_2
 
-
-#PROBLEM 2.5 INTERACTIONS
-#2.5.a: Does the small class effect on graduation differ by race? Estimate:
+# PROBLEM 2.5 INTERACTIONS
+## 2.5.a: Does the small class effect on graduation differ by race? Estimate:
 logit3=glm(hsgrad~small*race+yearssmall, family=binomial, data=star1)
-#2.5.b: Use avg slopes to compute the marginal effect of small separately for each racial group.
+## 2.5.b: Use avg slopes to compute the marginal effect of small separately for each racial group.
 marginaleffects::avg_slopes(logit3, variables="small", by="race")
-#2.5.c: In a comment, discuss: Is the small class effect larger for some groups than others?
+## 2.5.c: In a comment, discuss: Is the small class effect larger for some groups than others?
 
-#PROBLEM 2.6 PRESENTING RESULTS AND DISCUSSION
-#2.6.a: Create a table with modelsummary() comparing all four models (LPM bivariate, LPM controlled, logit bivariate, logit controlled). Use robust standard errors.
+# PROBLEM 2.6 PRESENTING RESULTS AND DISCUSSION
+## 2.6.a: Create a table with modelsummary() comparing all four models (LPM bivariate, LPM controlled, logit bivariate, logit controlled). Use robust standard errors.
 install.packages("modelsummary", type = "binary")
 library(modelsummary)
 modelsummary(
@@ -100,7 +100,7 @@ modelsummary(
     vcov=list("robust", NULL, "robust", NULL),
     output="assignment3/modeltable.html"
   )
-
+## Problem 2.6.b: Create a coefficient plot with modelplot
 library(modelsummary)
 library(ggplot2)
 modelplot(
