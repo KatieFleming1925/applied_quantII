@@ -178,6 +178,7 @@ star_plot<-modelplot(list("Bivariate"=smallreading, "Multiple"=readingmulti, "In
 print(star_plot)
 ggsave("assignment2/star_plot.png", plot = coef_plot, width = 6, height = 4, dpi = 300)
 modelsummary(list(smallreading, readingmulti, racemodel), vcov="robust", output="assignment2/star_table.html")
+print(star_plot)
 
 # Problem 2.6: Brief Discussion
 ## In a comment (5–10 sentences), discuss: a) What does the STAR data suggest about the effect of small class sizes on student achievement? b) Why is this evidence more credible than a typical observational study of class size? c) Are there any limitations or caveats based on what you observed in the data?
