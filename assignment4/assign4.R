@@ -277,4 +277,4 @@ modelsummary(
   stars = TRUE,
   gof_map = c("r.squared", "nobs"))
 ## Do the conclusions change? Why use robust SEs?
-### ANSWER: The conclusions do not change across the models; we see the same negative relationship between income per capita and infant mortality. We use robust SEs to account for heteroskedasticity; it increases our confidence in the results.
+### COMMENT/ANSWER: The conclusions do not change across the models; we see the same negative relationship between income per capita and infant mortality. We use robust SEs to account for heteroskedasticity; it increases our confidence in the results. 
