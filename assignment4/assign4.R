@@ -52,7 +52,7 @@ m2 = lm(ti_cpi ~ log(undp_gdp), data = df)
 
 ## 1.4.b: Interpret the coefficient on log(undp gdp). You can infer this from the mathematical properties of level-log models, but the most efficient way is to create a prediction plot.
 marginaleffects::plot_predictions(m2, condition="undp_gdp")
-tidy(m2)
+broom::tidy(m2)
 ### COMMENT/ANSWER: In a level log model, a 1% increase in GDP per capita yields a predicted increase of Beta/100 in the corruption perception index. If we double the GDP (log(2) approx 0.693)
 coef(m2)["log(undp_gdp)"]*log(2)
 
@@ -229,7 +229,7 @@ ggsave("assignment4/m4_plot.png")
 ## a) A non-oil African country with income = $1,000. 
 ## b) A non-oil European country with income = $20,000. 
 ## c) An oil-exporting country in the Americas with income = $10,000.
-newdf=marginaleffects::predictions(m3_2, newdata=datagrid(income=c(1000, 20000, 10000), region=c("Africa", "Europe", "Americas"), oil=c("no", "no", "yes")))
+newdf=marginaleffects::predictions(m3_2, newdata=marginaleffects::datagrid(income=c(1000, 20000, 10000), region=c("Africa", "Europe", "Americas"), oil=c("no", "no", "yes")))
 print(newdf)
 ## Note: since the outcome is log(infant), you need to exponentiate the predictions toget infant mortality in the original scale. Use exp() on the estimate column.
 predvalues=marginaleffects::predictions(model=m3_2, newdata=newdf)
