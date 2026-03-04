@@ -143,34 +143,45 @@ modelsummary(
   stars = TRUE,
   gof_map = c("r.squared", "nobs"))
 ## 1.8.b: In a comment, summarize: which model would you choose for a final presentation, and why?
-### ANSWER/COMMENT: M2 (the level-log) is the preferred specification because it has the highest R-squared and the best residual diagnostics, and its functional form has a clear substantive interpretation showing that wealth and corruption has diminishing returns. The log transformation also avoids the problem seen in the quadratic model where there is a sign reversal at extreme values.  
+### ANSWER/COMMENT: m2 (the level-log) is the preferred specification because it has the highest R-squared and the best residual diagnostics, and its functional form has a clear substantive interpretation showing that wealth and corruption has diminishing returns. The log transformation also avoids the problem seen in the quadratic model where there is a sign reversal at extreme values.  
 
 # PART 2: HOME PORTION (WEALTH & INFANT MORTALITY)
 ## PROBLEM 2.1 DATA SETUP AND EXPLORATION
-### 2.1.a: Load the dataset and print summary statistics for all variables. How many countries are in the data?
+### 2.1.a: Load the dataset and print summary statistics for all variables. 
 infantdata=haven::read_dta("data/infantmortality.dta")
 summary(infantdata)
+### How many countries are in the data?
 ### ANSWER: There are 101 countries in the data. 
-## 2.1.b: Create a histogram of infant and a histogram of income. Are either of them rightskewed?
+## 2.1.b: Create a histogram of infant and a histogram of income. 
 hist(infantdata$infant)
 hist(infantdata$income)
+## Are either of them rightskewed?
+### ANSWER: Both are rightskewed.
 ## 2.1.c:  Create a scatter plot of infant (y-axis) against income (x-axis), coloring points by region. Describe the relationship in a comment.
 plotii=ggplot(infantdata, aes(x = infant, y = income, col = region)) +
   geom_point() +
   labs(x = "Infant Mortality (per 1,000)", y = "Income Per Capita ($)", title = "Infant Mortality & Income")
 plotii
-## 2.1.d: Create the same scatter plot but using log(income) on the x-axis and log(infant) on the y-axis. Does the log-log relationship look more linear?
-plotiilog=ggplot(infantdata, aes(x = log(infant), y = log(income), col = region)) +
+## 2.1.d: Create the same scatter plot but using log(income) on the x-axis and log(infant) on the y-axis. 
+plotiilog=ggplot(infantdata, aes(x = log(income), y = log(infant), col = region)) +
   geom_point() +
-  labs(x = "Infant Mortality (per 1,000)", y = "Income Per Capita ($)", title = "Infant Mortality & Income")
+  labs(x = "Income Per Capita ($)", y = "Infant Mortality (per 1,000)", title = "Infant Mortality & Income")
 plotiilog
+## Does the log-log relationship look more linear?
+### ANSWER: Yes, the log-log relationship looks more linear. There is a negative trend; as income per capita increases, infant mortality decreases.
+
 ## PROBLEM 2.2 COMPARING SPECIFICATIONS
 ## 2.2.a: a) Estimate a level-level model:
 m1_2 = lm(infant ~ income, data = infantdata)
 ## 2.2.b: Estimate a log-log model:
 m2_2 = lm(log(infant) ~ log(income), data = infantdata)
-## 2.2.c: Interpret the coefficient on income in each model - In m1: what is the predicted change in infant mortality for a $1,000 increase in income? In m2: recall that the log-log coefficient is an elasticity. What does it mean here? (e.g., “A 10% increase in income is associated with a % change in infant mortality.”)
-
+## 2.2.c: Interpret the coefficient on income in each model - 
+## In m1: what is the predicted change in infant mortality for a $1,000 increase in income? 
+m1_2
+### ANSWER: The coefficient on income here is -0.02091, which we multiply by 1000 to get 20.9. In short: A $1,000 increase in income per capita is associated with a DECREASE of about 20 deaths per 1,000 births.
+## In m2: recall that the log-log coefficient is an elasticity. What does it mean here? (e.g., “A 10% increase in income is associated with a % change in infant mortality.”)
+m2_2
+### ANSWER: The log coefficient here is -0.5118. We multiply this by 10 here to get 5.118. A 10% increase in income is associated with a 5.118% DECREASE in infant mortality.
 
 ## 2.2.d: Create a residuals vs. fitted values plot for both models. Which specification has a better residual pattern? Discuss in a comment.
 broom::augment(m1_2)
@@ -179,19 +190,23 @@ broom::augment(m2_2)
 plot(m1_2, which=1)
 plot(m2_2, which=1)
 
-## ANSWER: The log-log model has a better residual pattern. Here, the residuals are more or less varying to the same extent. 
+## ANSWER: The log-log model has a better residual pattern. Here, the residuals are more or less varying to the same extent and spread evenly  around 0, suggesting homoskedasticity. In the level-level model, there is more curvature and residuals are clustered toward one end, suggesting heteroskedasticity. 
 
 # PROBLEM 2.3: MULTIPLE REGRESSION WITH CONTROLS
 ## 2.3.a: Estimate a log-log model with controls for region and oil-exporting status:
-m3 = lm(log(infant) ~ log(income) + region + oil, data = infantdata)
+m3_2 = lm(log(infant) ~ log(income) + region + oil, data = infantdata)
 
-## 2.3.b: Print the results. In a comment, interpret the coefficient on log(income): does controlling for region and oil status change the income effect?
-m3
+## 2.3.b: Print the results. 
+m3_2
+## In a comment, interpret the coefficient on log(income): does controlling for region and oil status change the income effect?
+### ANSWER: This is a log-log so the coefficient is an elasticity; here, the results show that a 10% increase in income is associated with a 3.4% decrease in infant mortality. Controlling for region and oil status did, therefore, change the income effect, but not by a substantive amount.
 
 ## 2.3.c: Interpret the coefficient on the Africa region indicator (relative to the reference category). What does it tell you about infant mortality in Africa, controlling for income?
+### ANSWER: The coefficient on the Africa region indicator would be 0 here. Here, the coefficients on the other regions are negative compared to Africa, meaning that Africa has higher infant mortality rates even after controlling for income.
 
 ## 2.3.d: Compute average marginal effects using avg slopes(m3). Focus on the AME of income and report it in a comment.
-marginaleffects::avg_slopes(m3)
+marginaleffects::avg_slopes(m3_2)
+### ANSWER: The AME of income here is -0.00159, so a one-unit increase in income is associated with a 0.00159 decrease in infant mortality. In other words, a $1,000 increase in income is associated with a 1.59 decrease in infant mortality on average.
 
 # PROBLEM 2.4 INTERACTION: OIL STATUS AND INCOME
 ## 2.4.a: Estimate a model with an interaction between oil status and log income:
@@ -199,51 +214,67 @@ m4 = lm(log(infant) ~ log(income) * oil + region, data = infantdata)
 ## 2.4.b: Use avg slopes(m4, variables = "income", by = "oil") to compute the marginal effect of income separately for oil-exporting and non-oil countries.
 marginaleffects::avg_slopes(m4, variables = "income", by="oil")
 ## 2.4.c: In a comment, discuss: does the relationship between income and infant mortality differ for oil-exporting countries? What might explain this?
+### ANSWER: Yes, the relationship between income and infant mortality does change for oil-exporting and non-oil-exporting countries. In countries that do not export oil, higher income has a much stronger association with decreased infant mortality; we do not see such a strong effect from income in oil-exporting countries. This may be due to the possibility that in oil-exporting countries, the oil-derived wealth may be strongly concentrated. 
 
 ## 2.4.d: Plot how the marginal effect of income varies by oil status and save the plot.
-marginaleffects::plot_slopes(m4, variables = "income", condition = "oil")
+m4_plot=marginaleffects::plot_slopes(m4, 
+  variables = "income", 
+  condition = "oil"
+)
+m4_plot
+ggsave("assignment4/m4_plot.png")
 
 # PROBLEM 2.5 PREDICTED VALUES FOR SPECIFIC SCENARIOS
 ## 2.5.a: Using model m3 (without interaction), compute predicted infant mortality rates for: 
 ## a) A non-oil African country with income = $1,000. 
 ## b) A non-oil European country with income = $20,000. 
 ## c) An oil-exporting country in the Americas with income = $10,000.
-marginaleffects::predictions(m3,
-  newdata = marginaleffects::datagrid(
-    income = c(1000, 20000, 10000),
-    region = c("Africa", "Europe", "Americas"),
-    oil = c("no", "no", "yes")))
+newdf=marginaleffects::predictions(m3_2, newdata=datagrid(income=c(1000, 20000, 10000), region=c("Africa", "Europe", "Americas"), oil=c("no", "no", "yes")))
+print(newdf)
 ## Note: since the outcome is log(infant), you need to exponentiate the predictions toget infant mortality in the original scale. Use exp() on the estimate column.
+predvalues=marginaleffects::predictions(model=m3_2, newdata=newdf)
+predvalues$infant_pred=exp(predvalues$estimate)
+pred_table=cbind(newdf, infant_pred=predvalues$infant_pred)
+pred_table
 
 ## 2.5.b: In a comment, discuss the predicted values. Are they plausible? How large is the gap between the African and European scenarios?
+### ANSWER/COMMENT: Yes, the predicted values here are plausible given that they capture the high infant mortality rates in low-income countries in Africa. There is a big gap between the mortality rates in African countries and European countries.
+
 
 # 2.6 PUBLICATION-QUALITY VISUALIZATION
 ## 2.6.a: Create a prediction plot showing predicted infant mortality across income levels, separately by region. Customize the plot to make it suitable for a general audience: add informative axis labels, a title, and use theme minimal() or similar.
-plot4=marginaleffects::plot_predictions(m3, condition = c("income", "region")) +
+plot4=marginaleffects::plot_predictions(m3_2, condition = c("income", "region")) +
   labs(x="Income", y="Mortality", title="Predicting Infant Mortality with Income")+
   theme_minimal()
 ## Save the plot.
 ggsave("assignment4/plot4.png", plot = plot4, width = 6, height = 4, dpi = 300)
+plot4
 
-## 2.6.b: In a comment (5–10 sentences), discuss: what does this plot tell a general audience about the relationship between wealth and infant mortality? What role does geography play? What are the main limitations of this analysis (e.g., omitted variables, reverse causality, ecological fallacy)?
+## 2.6.b: In a comment (5–10 sentences), discuss: 
+## - what does this plot tell a general audience about the relationship between wealth and infant mortality? 
+## - What role does geography play? 
+## - What are the main limitations of this analysis (e.g., omitted variables, reverse causality, ecological fallacy)?
+### ANSWER: This plot tells a general audience that there is a negative relationship between income and infant mortality. As income increases, infant mortality rates decrease. This plot also conveys the differential impact that increases in wealth has on infant mortality among differing levels of prior income. In other words, we can see that at lower levels of income, an increase will lead to a steeper decrease in infant mortality. We can also compare the different regions against one another in this graph; this conveys the regional variation in that, while the relationship between income and mortality is always negative, the levels are different across regions. Some limitations of this analysis could be reverse causality (i.e., higher infant mortality leads to lower income per capita via the costs associated with healthcare etc.); an omitted variable bias (here, for instance, we cannot control for health infrastructure quality, etc.); and the ecological fallacy that we can only see the overall picture and not the impact of a higher income on an individual child's survival rate.
 
 # PROBLEM 2.7 DIAGNOSTICS AND ROBUST INFERENCE
 ## 2.7.a: Create a residuals vs. fitted values plot for m3. 
-plot(m3, which=1)
+plot(m3_2, which=1)
 ## Does the plot suggest heteroskedasticity?
+### ANSWER: Yes, the plot suggests heteroskedasticity. The values all move in a similar pattern around 0.
 
 ## 2.7.b: Create a regression table comparing all four models with robust standard errors:
 modelsummary(
-  list("Level" = m1, "Log-Log" = m2,
-  "Controls" = m3, "Interaction" = m4),
+  list("Level" = m1_2, "Log-Log" = m2_2,
+  "Controls" = m3_2, "Interaction" = m4),
   vcov = "robust",
   stars = TRUE,
   gof_map = c("r.squared", "nobs"))
 
 ## 2.7.c: Compare the robust and default standard errors for m3. Run modelsummary() with and without vcov = "robust". Do the conclusions change? Why use robust SEs?
 modelsummary(
-  list("Level" = m1, "Log-Log" = m2,
-  "Controls" = m3, "Interaction" = m4),
+  list("Level" = m1_2, "Log-Log" = m2_2,
+  "Controls" = m3_2, "Interaction" = m4),
   stars = TRUE,
   gof_map = c("r.squared", "nobs"))
 ## Do the conclusions change? Why use robust SEs?
+### ANSWER: The conclusions do not change across the models; we see the same negative relationship between income per capita and infant mortality. We use robust SEs to account for heteroskedasticity; it increases our confidence in the results.
