@@ -96,4 +96,63 @@ modelsummary(
 ## 1.4.c: In a comment, discuss what the year fixed effects are controlling for. Does adding them change the coefficient on UnemPct? If so, what does that suggest about the role of common time trends in driving the relationship between unemployment and approval?
 ### ANSWER: Year fixed effects absorb common time shocks such as national economic cycles, presidential scandals, wars, or any other event that affects approval in all states simultaneously in a given year. If national unemployment rises during a recession, both the unemployment rate and presidential approval will move together in all states at once, not because of a state-level effect but because of the shared macro environment. Adding year dummies removes this source ofn confounding and identifies the effect of a state's unemployment relative to the national average in each year. If the coefficient on UnemPct changes noticeably after adding year fixed effects, then this would suggest that common time trends/shocks were partly driving the relationship estimated with state FEs alone.
 
+# PART 2: TAKE-HOME (TEACHING EVALS)
+## PROBLEM 2.1: DATA EXPLORATION
+evaldf=haven::read_dta("https://github.com/franvillamil/AQM2/raw/refs/heads/master/datasets/teaching_evals/teaching_evals.dta")
+## 2.1.a: How many unique instructors and courses are in the data? Us n_distinct df$InstrID and n_distinct df$CourseID
+n_distinct(evaldf$InstrID)
+n_distinct(evaldf$CourseID)
+### ANSWER: There are 48 unique instructors and 254 unique courses in the dataset.
+## What is the average number of observations (course-year pairs) per instructor? 
+mean(table(evaldf$InstrID))
+## In a comment, note whether this looks like a long or short panel.
+### ANSWER: This looks like it is a short panel dataset. With short panel data, there is a higher total number of individuals than there are observations (i.e., years) attached to each individual. Here we have 48 instructors and the average number of observations attached to each professor/individual is 17.5, so there are not as many time observations. 
+## 2.1.b: Create a scatter plot of Eval on the y-axis against Apct on the x-axis. Add a regression line.
+ggplot(evaldf, aes(x=Apct, y=Eval))+
+  geom_point(alpha = 0.4)+
+  geom_smooth(method="lm")+
+  theme_minimal()+
+  labs(x="% Students Receiving at least A-", y="Avg Course Eval")
+## In a comment, describe the cross-sectional relationship between grading generosity and evaluations: Is it positive or negative? Does this pattern surprise you?
+### ANSWER: The scatterplot shows that there is a positive relationship between grading generosity and course evaluations, but I do not think it is a very strong relationship. There do not seem to be many low course evaluations to begin with. The fact that the relationship is not stronger or more starkly positive is what surprises me the most.
 
+## PROBLEM 2: POOLED OLS BASELINE
+## 2.2.a: Estimate a pooled OLS model with all three regressors.
+m1.2=lm(Eval~Apct+Enrollment+Required, data=evaldf)
+## Report the results using summary or modelsummary.
+modelsummary(m1.2)
+## In a comment, intrepret the coefficient on Apct: a one-percentage point increase is associated with how much of a change in evaluation scores?
+### ANSWER: A one-percentage point increase is associated with a 0.0036 increase in evaluation scores.
+
+## 2.2.b: In a comment, explain why the OLS estimate of Apct might be biased. What unobserved characteristics of instructors could simultaneously drive both grading generosity and evaluation scores? Give at least two concrete examples. Is the expected bias upward or downward?
+## ANSWER: Pooled OLS is problematic because it does not take into account unobserved heterogeneity among individuals or over time, so in this case, characteristics unique to a professor are not taken into account by this coefficient. These unobserved characteristics can be driven by an instructor's personality. For example (1), more laidback professors might give out higher grades and receive better evaluations. Another example (2) can be a professor's ability to communicate: Better communicators can teach the material better; therefore, students will perform better and might provide higher evals because of the professor's communication/teaching quality. The expected bias is upward because these characteristics correlate with both variables.
+
+
+## PROBLEM 2.3: FIXED EFFECTS MODELS
+## 2.3.a: Estimate a model with instructor fixed effects and a two-way model adding year fixed effects
+library(fixest)
+m_instr=feols(Eval~Apct+Enrollment+Required|InstrID, data=evaldf)
+m_twfe2=feols(Eval~Apct+Enrollment+Required|InstrID+Year, data=evaldf)
+## 2.3.b: Compare all three models in a single table with standard errors clustered by instructor.
+modelsummary(
+  list("Pooled OLS"=m1.2, "Instructor FE"=m_instr, "Two-Way FE"=m_twfe2),
+  vcov=~InstrID,
+  stars=TRUE,
+  gof_map=c("r.squared", "nobs")
+)
+
+## 2.3.c: Interpret the coefficient on Apct in the instructor-FE model. In a comment, explain what the instructor fixed effect is controlling for. Is the FE coefficient on Apct larger or smaller than in the pooled OLS? What does this tell us about the direction of omitted variable bias in the pooled OLS estimate? Are more lenient graders systematically better or worse evaluators in terms of their unobserved characteristics?
+### ANSWER: The instructor fixed effect controls for all time-invariant characteristics of an instructor, e.g., an instructor's personality traits. The FE coefficient is smaller than the pooled OLS coefficient, which tells us that these unobserved characteristics were behind the coefficient in the pooled OLS estimate. Lenient graders are systematically better evaluators when it comes to their unobserved characteristics.
+
+# PROBLEM 2.4: RANDOM EFFECTS AND THE HAUSMAN TEST
+## 2.4.a: Estimate a random effects model using plm. The random effects model assumes that the unobserved instructor-level heterogeneity is uncorrelated with the regressors.
+library(plm)
+pdata=pdata.frame(evaldf, index=c("InstrID", "CourseID"))
+m_re=plm(Eval~Apct+Enrollment+Required, data=pdata, model="random")
+
+## 2.4.b: Run the Hausman test to assess whether fixed or random effects is more appropriate. The Hausman test checks whether the random effects assumption (no correlation between unobservables and regressors) holds.
+me_fe_plm=plm(Eval~Apct+Enrollment+Required, data=pdata, model="within")
+phtest(me_fe_plm, m_re)
+
+## In a comment, interpret the Hausman test result. What is the null hypothesis? Is it rejected? Based on the rest and on the substantive reasoning from the previous subsection, should you prefer the fixed effects or the random effects estimator for the dataset? Explain in 3-5 sentences.
+### ANSWER: With the Hausman test, the null hypothesis is that random effects is more appropriate. Based on the results here, we can reject that hypothesis. The p-value is very high at 0.178, which means that we cannot say that the unobserved instructor-level heterogeneity is uncorrelated with the regressors. Fixed effects here is therefore more appropriate.
