@@ -126,7 +126,7 @@ length(unique(mpdta$first.treat))
 ## Use table(mpdta$first.treat) to see how many counties adopted treatment in each year.
 table(mpdta$first.treat)
 ## In a comment, explain what "staggered treatment adoption" means in this context: Why is it a problem to simply compare treated vs untreated counties?
-### ANSWER/COMMENT: Staggered treatment adoption refers to a phenomenon where the units of analysis are assigned treatment at different times from one another. It can be problematic because in this case, they differ in the timing, so cannot be said to be exactly comparable to one another.
+### ANSWER/COMMENT: Staggered treatment adoption refers to a phenomenon where the units of analysis are assigned treatment at different times from one another. It can be problematic because in this case, they differ in the timing of treatment receipt, so cannot be said to be exactly comparable to one another except from treatment assignment because of the component of time.
 
 ## 2.1.b: Plot average log teen employment over years, separately for each cohort.
 library(dplyr)
@@ -149,6 +149,7 @@ plot2.1=ggplot(mpdta_avg, aes(x=year, y=mean_lemp, color=cohort))+
 ggsave("assignment6/plot2.1.png")
 
 ## In a comment, describe the patterns: do the cohorts appear to follow similar trends before their respective treatment years? What happens after treatment? Are there any cohorts whose pre-trends look problematic?
+### ANSWER/COMMENT: Prior to treatment, the cohorts do appear to follow similar trends. You can see that there is a slight negative slope, i.e., that minimum wage decreases across all cohorts up until 2004. 
 
 ## PROBLEM 2.2 NAIVE TWFE vs CALLAWAY-SANTANNA ESTIMATOR
 ## 2.2.a: Estimate a naive TWFE model treating all treated counties as a single group. (Check the data, maybe you need to create a time-varying treatment indicator first, call it treated_post. It should indicate treatment units after treatment comes into effect.)
@@ -156,9 +157,9 @@ mpdta = mpdta %>%
   mutate(treated_post = ifelse(first.treat > 0 & year >= first.treat, 1, 0))
 
 naive_twfe = feols(lemp ~ treated_post|countyreal+year, data = mpdta)
-## Report and interpret the coefficient on treated_post. In a comment, note that this model pools all treatment cohorts together -- what implicit assumption is it making about the treatment effect 
+## Report and interpret the coefficient on treated_post. In a comment, note that this model pools all treatment cohorts together -- what implicit assumption is it making about the treatment effect?
 naive_twfe
-### ANSWER/COMMENT:
+### ANSWER/COMMENT: The coefficient on treated_post is -0.036549, showing that in the post-period for treatment cohorts, there is a decrease in employment relative to the untreated counties. Since we are pooling all treated cohorts together though, the implicit assumption is that treatment effects are the same across all cohorts. This is problematic in instances of staggered treatment because the cohorts that were treated earlier might serve as control groups for subsequently treated units. This will then lead to biased estimates. 
 
 ## 2.2.b: Now use the Callaway-Santanna (2021) estimator, which estimates group-time average treatment effects separately for each cohort and time period, using never-treated counties as the control group.
 out <- att_gt(
@@ -173,9 +174,11 @@ out <- att_gt(
 )
 out
 
-## Report the overall ATT estimate. Is it similar to or different from the naive TWFE estimate?
+## Report the overall ATT estimate. 
 group_effects = aggte(out, type = "group")
 print(group_effects)
+## Is it similar to or different from the naive TWFE estimate?
+### ANSWER/COMMENT: The ATT here is -0.0329, which is indeed slightly lower than the naive TWFE estimate. CS differs from naive TWFE because the CS model takes into consideration the staggered treatment adoption/assignment. It also uses never-treated groups as the control rather than using prior-treated groups as control.
 
 ## 2.2.c: Examine the event-study version of the Callaway-Santanna results.
 es <- aggte(out, type = "dynamic")
@@ -197,24 +200,25 @@ cs_btstrp = att_gt(
   bstrap = TRUE,
   cband = TRUE)
 
-## The summary outpout includes a p-value for the pre-test of the parallel trends assumption. Report this p-value.
+## The summary output includes a p-value for the pre-test of the parallel trends assumption. Report this p-value.
 summary(cs_btstrp)
 ### ANSWER/COMMENT: The p-value is 0.16812.
 ## In a comment, explain what the test is doing: what is the null hypothesis, and what does a large p-value tell us?
-### ANSWER/COMMENT:
+### ANSWER/COMMENT: The null hypothesis is that the ATT pre-treatment will be 0 and that there will be no difference in the trends pre-treatment. A large p-value means that we fail to reject the hypothesis, i.e., that pre-treatment trends are similar. 
 
 ## 2.3.b: Visualize all group-time ATT estimates - both pre-and post-treatment.
-ggdid(cs_btstrp)
+plot2.2=ggdid(cs_btstrp)
 ## Save the plot. Each panel corresponds to a treatment cohort; negative event-time values are pre-treatment periods.
 ggsave("assignment6/plot2.2.png")
 ## In a comment, describe what you see: are the pre-treatment ATT estimates close to 0 and statistically indistinguishable from zero across all cohorts?
-### ANSWER/COMMENT:
+### ANSWER/COMMENT: Yes, the pre-treatment ATT estimates are close to 0 and statistically indistinguishable from zero across all cohorts. The uniform confidence bands overlap with the horizontal 0 line. 
 
 ## 2.3.c: In a comment (2-3 sentences), reflect on the limitations of pre-testing. Even if we cannot reject parallel trends in the pre-period, can we be certain the assumption holds during the post-treatment period? What is the pre-test actually telling us, and what is it NOT telling us?
+### ANSWER/COMMENT: With pre-testing we are only looking at the pre-treatment period and the results only tell us about the comparability between units, not the causality of the treatment. We might not be able to keep the assumption in the post-treatment period because shocks in this time period might violate the parallel trends assumption. 
 
 ## PROBLEM 2.4 COMPARING CONTROL GROUP SPECIFICATIONS
 ## By default, the CS estimator uses never-treated units as the control group. An alternative is not-yet-treated units - counties that will eventually receive treatment but have not been treated at time t. This expands the control group (more observations, potentially more precision) but introduces a different assumption: that outcomes for not-yet-treated units are unaffected by anticipation of their own future treatment.
-## 2.4.a: Re-restimate the CS model using not-yet-treated counties as the control group:
+## 2.4.a: Re-estimate the CS model using not-yet-treated counties as the control group:
 cs_out_nyt=att_gt(
   yname="lemp",
   gname="first.treat",
@@ -230,20 +234,21 @@ cs_out_nyt=att_gt(
 groupeffects2=aggte(cs_out_nyt, type="simple")
 print(groupeffects2)
 ## Compare it to the never-treated estimate from Section 2.2.b. Are they similar or different in sign and magnitude?
-### ANSWER/COMMENT:
+### ANSWER/COMMENT: Here the overall ATT is -0.0414 whereas the never-treated estimate in 2.2.b was -0.0329. They are similar in sign, indicating the same negative relationship is detected, but different in magnitude: The never-treated estimate was lower in magnitude when we speak in absolute terms.
 
 ## 2.4.b: Produce and save an event-study plot for this specification:
 cs_dyn_nyt=aggte(cs_out_nyt, type="dynamic")
 ggdid(cs_dyn_nyt)
 ggsave("assignment6/mpdta_event_study_nyt.pdf", width=7, height=4)
 ## In a comment, compare the pre-trends and post-treatment patterns to the never-treated event study from Section 2.2.c. Does using the broader control group change the conclusions?
-### ANSWER/COMMENT: 
+### ANSWER/COMMENT: Both show a similar pattern. Therefore, they do not change the conclusion.
 
 ## 2.4.c: In a comment (2-3 sentences), discuss the trade-off between the two control group choices. Under what conditions would you prefer never-treated as the control group? When might not-yet-treated be preferable despite the additional assumption it requires?
-### ANSWER/COMMENT:
+### ANSWER/COMMENT: The never-treated control group has a simpler assumption and no anticipation bias but there are fewer controls; I would prefer this in cases where I want to rule out anticipation bias entirely. Not-yet-treated control groups are problematic in this sense because they assume that the not-yet-treated are unaffected by anticipating future treatment, which might bias results.
 
 ## PROBLEM 2.5: DISCUSSION: WHY DOES TWFE FAIL IN STAGGERED SETTINGS?
 ## 2.5.a: In a comment (3-5 sentences), explain intuitively why the TWFE estimator can produce misleading results in staggered DiD settings. What is the "forbidden comparison" problem? Which units get used as the control group in a way that is problematic, and why is that a problem if treatment effects are heterogeneous across cohorts or over time?
-### ANSWER/COMMENT:
+### ANSWER/COMMENT: The TWFE estimator can produce misleading results because it is comparing treated groups against one another, not against an actual control group. The forbidden comparison problem is just this: If treatment effects vary over time and treatment is administered at different time periods but considered the same, then we cannot isolate heterogeneous effects because TWFE assumes the same effect across all treated cohorts.
 
 ## 2.5.b: Compare the TWFE estimate from question 2.2a to the Callaway-Sant'anna estimates from question 2.2.b. Are they similar or different? In a comment, based on the event-study pre-trends from question 2.2.c, which estimate do you find more credible and why?
+### ANSWER/COMMENT: The TWFE estimate is -0.0365 while the CS never-treated estimate is -0.0329 and the not-yet-treated CS estimate is -0.0414. All are similar in that they reflect the negative relationship, but CS differs quite a bit in magnitude from TWFE. I find CS more credible because it does not pool the treatment assignments/cohorts. This to me makes it cleaner and more akin to the treatment-vs-control comparison.
