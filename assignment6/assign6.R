@@ -23,7 +23,8 @@ library(did)
 ## 1.1.a: Create a NJ dummy variable that equals 1 if location is not "PA" or otherwise. 
 df$NJdummy<-ifelse(df$location=="PA", 0,1) # I did this bc so many diff variations of NJ by region
 ## Report the number of restaurants in NJ vs PA using table.
-table(df$NJdummy) ## each observation corresponds to a restaurant and its location so this shows that there are 67 PA restaurants and 291 NJ restaurants.
+table(df$NJdummy)
+### ANSWER: each observation corresponds to a restaurant and its location so this shows that there are 67 PA restaurants and 291 NJ restaurants.
 ## Now compute the average wageBefore and wageAfter separately for NJ and PA restaurants using group_by() and summarise().
 df%>%
   group_by(NJdummy)%>%
@@ -31,9 +32,8 @@ df%>%
     mean_wage_before=mean(wageBefore, na.rm=TRUE),
     mean_wage_after=mean(wageAfter, na.rm=TRUE))
 
-
 ## In a comment, note whether wages in NJ increased relative to PA after the policy change.
-### ANSWER/COMMENT: Prior to the policy implementation, both states shared nearly the same mean minimum wage. Afterward, though, wages increased by more than half a dollar in NJ. 
+### ANSWER/COMMENT: Prior to the policy implementation, both states shared nearly the same mean minimum wage. Afterward, though, wages increased by more than half a dollar in NJ. This confirms that the policy change raised wages in the treated state. 
 
 ## 1.1.b: Compute the simple DiD estimate manually using the following steps:
 means=df%>%
@@ -49,7 +49,7 @@ pa_change=means$change[means$NJdummy==0]
 did_est=nj_change-pa_change
 cat("DiD estimate:", round(did_est, 3), "\n")
 ## In a comment, interpret the result in words. What does this number say about the effect of the minimum wage in crease on employment?
-### ANSWER/COMMENT: The DiD estimate is the difference in within-group changes. A positive value means full-time employment grew more (or fell less) in NJ than in PA after the minimum wage increase, which contradicts the standards prediction that higher minimum wages reduce employment. 
+### ANSWER/COMMENT: The DiD estimate is the difference in within-group changes. A positive value means full-time employment grew more (or fell less) in NJ than in PA after the minimum wage increase, which contradicts the standard prediction that higher minimum wages reduce employment. 
 
 ## 1.1.c: To run regressions, reshape the data to long format (one row per restaurant-period) using the following code. 
 library(dplyr)
@@ -68,7 +68,7 @@ df_long=df%>%
 nrow(df_long)
 nrow(df)
 ## In a comment, explain why the long format is needed for the DiD regression.
-### ANSWER/COMMENT:
+### ANSWER/COMMENT: There are twice as many rows/observations in the long dataset as there are in the original. The DiD regression requires long format because the interaction post*NJ is the DID estimator, which captures how the within-NJ change in employment (post to pre) differs from the same change in PA. 
 
 ## PROBLEM 1.2: DiD REGRESSION
 ## 1.2.a: Estimate the DiD regression using fixest:
@@ -76,8 +76,8 @@ library(fixest)
 m_did=feols(full_emp~post*NJdummy, data=df_long, cluster=~id)
 ## Report the results using modelsummary(). 
 modelsummary(m_did)
-## Identify and interpret the coefficient on the interaction term post*NJ - this is the DiD estimator. Compare it to your manual calculation from question 1.1b - they should match
-### ANSWER: They do match, both are 2.927.
+## Identify and interpret the coefficient on the interaction term post*NJ - this is the DiD estimator. Compare it to your manual calculation from question 1.1b - they should match.
+### ANSWER: They do match, both are 2.927. The post coefficient reflects the pre-post change in PA (the counterfactual), the NJ coefficient is the baseline difference between NJ and PA, and the interaction captures the additional change in NJ relative to this baseline trend. 
 
 ## 1.2.b: Add chain fixed effects to absorb time-invariant differences across fast food chains:
 m_did_fe=feols(full_emp~post*NJdummy|chain, data=df_long, cluster=~id)
@@ -88,8 +88,10 @@ modelsummary(
   output="markdown"
 )
 ## Does controlling for chain type change the DiD estimate noticeably? In a comment, explain what the chain fixed effects are absorbing and why controlling for them may or may not matter here.
+### ANSWER/COMMENT: Chain fixed effects do not noticeably change the DiD estimate. Chain fixed effects absorb the baseline differences in staffing levels across food chains (e.g., Wendy's might have structurally different employment level than KFC). However, chain types are rougly balanced across both states, so when we control for it there is little impact on the DiD coefficient.
 
 ## 1.2.c: In a comment, state the parallel trends assumption for this specific example. What would we need to observe about NJ and PA employment trends in the pre-period to be confident in the DiD estimate? Give one concrete example of something that could violate this assumption (i.e., something that would affect NJ but not PA employment independently of the minimum wage change).
+### ANSWER/COMMENT: The parallel trend assumption here is that absent treatment of a minimum wage increase, NJ would have followed the same trajectory as PA because both states share a similar economic pattern and the two surveys were administered close in time, which limits the opportunities for divering trends. An example of a concrete violation that might occur is if NJ were to experience an independent economic shock during this period, e.g., a major employer opens or shuts plants in NJ in between the two survey waves. This would change NJ employment for reasons unrelated to the minimum wage and the DiD estimate would be biased. 
 
 ## PROBLEM 1.3 WAGES AS A VALIDATION CHECK
 ## 1.3.a: Repeat the DiD analysis using wages as the outcome instead of employment. Reshape the data for wages and estimate the model:
@@ -105,8 +107,10 @@ df_long_wage=df%>%
 m_wage = feols(wage ~ post * NJ, data = df_long_wage, cluster = ~id)
 ## Report the results. Did the minimum wage increase actually raise wages in NJ relative to PA? Is the sign and magnitude of the DiD coefficient what you would expect?
 modelsummary(m_wage)
+### ANSWER/COMMENT: The coefficient on the interaction here is positive and statistically significant at the p < 0.001 level. I.e., NJ wages rose substantially compared to PA wages after the policy change. The magnitude is consistent with the $0.80 minimum wage increase ($5.05 from $4.25). This is precisely the sign and magnitude one would expect if the law was actually binding.
 
 ## 1.3.b: In a comment, explain why the wage result is important for interpreting the employment DiD. If wages had NOT risen in nJ after the law change, what would that imply about the employment result? Why is it reassuring (or not surprising) that wages did rise in NJ?
+### ANSWER/COMMENT: The wage DiD serves as a "first stage" or manipulation check. If NJ wages had not risen after the minimum increase, it would be unclear whether this study is truly estimating the effect of a minimum wage change. The law might not have been binding or firms might have already been paying about the new minimum. The fact that wages did rise in NJ gives us confidence that the treatment actually occurred as intended, so the employment DiD can be credibly interpreted as a causal response to the minimum wage increase rather than a spurious or null comparison.
 
 # PART 2: TAKE-HOME: STAGGERED D-I-D
 install.packages("did", dependencies = TRUE, type = "binary")
