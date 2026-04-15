@@ -23,3 +23,6 @@ summary(data)
 unique(data$concello_nat)
 
 data$Nome=adapt(data$Nome)
+
+library(infoelectoral)
+data
