@@ -1,5 +1,4 @@
 library(devtools)
-install_github("franvillamil/muniSpain")
 library(muniSpain)
 
 
@@ -19,10 +18,26 @@ data = read.csv("victims_galicia_raw.csv",
   "edad", "profesion", "concello_nat", "comarca_nat", "prov_nat", "lugar",
   "concello_vecino", "comarca_vecino", "prov_vecino", "fecha", "info"))
 
+data = adapt(data[, c("nombre", "apellidos", "edad",
+  "concello_vecino", "prov_vecino", "tipo", "fecha")])
+
+data$concello_vecino = tolower(data$concello_vecino)
+
+data$prov_vecino = tolower(data$prov_vecino)
+
+data$tipo = tolower(data$tipo)
+
+nrow(data)
 summary(data)
-unique(data$concello_nat)
+summary(data$fecha)
 
-data$Nome=adapt(data$Nome)
+range(data$fecha)
 
-library(infoelectoral)
-data
+unique(data$tipo)
+mode(data$fecha)
+
+library(dplyr)
+
+##uploading election data
+
+
