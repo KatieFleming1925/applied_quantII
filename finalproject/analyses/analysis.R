@@ -127,6 +127,9 @@ moran.test(residuals(ols_spatial), listw = listw_clean, zero.policy = TRUE)
 
 library(spatialreg)
 # Spatial Error Model (SEM)
+
+lm.LMtests(ols_spatial, listw_clean, test = c("LMerr", "LMlag", "RLMerr", "RLMlag"))
+
 sem_fit <- errorsarlm(sec_share ~ repression_pc + pct_left + pct_centleft + pct_right, data = fdata_spatial_clean, listw = listw_clean, zero.policy = TRUE)
 summary(sem_fit)
 
