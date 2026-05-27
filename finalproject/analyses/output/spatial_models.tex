@@ -1,0 +1,40 @@
+\begin{table}
+\centering
+\begin{talltblr}[         %% tabularray outer open
+entry=none,label=none,
+note{}={+ p \num{< 0.1}, * p \num{< 0.05}, ** p \num{< 0.01}, *** p \num{< 0.001}},
+]                     %% tabularray outer close
+{                     %% tabularray inner open
+colspec={Q[]Q[]Q[]Q[]},
+hline{2}={1-4}{solid, black, 0.05em},
+hline{16}={1-4}{solid, black, 0.05em},
+hline{1}={1-4}{solid, black, 0.08em},
+hline{24}={1-4}{solid, black, 0.08em},
+column{2-4}={}{halign=c},
+column{1}={}{halign=l},
+}                     %% tabularray inner close
+& OLS & SEM & SLM \\
+(Intercept) & \num{10.798}*** & \num{11.816}*** & \num{3.796} \\
+& (\num{2.742}) & (\num{2.662}) & (\num{2.951}) \\
+Repression (per 1000) & \num{0.251} & \num{0.673} & \num{0.503} \\
+& (\num{0.729}) & (\num{0.722}) & (\num{0.665}) \\
+Left vote 1936 & \num{-0.061} & \num{-0.080} & \num{-0.056} \\
+& (\num{0.103}) & (\num{0.104}) & (\num{0.094}) \\
+Centre-left vote 1936 & \num{0.128}* & \num{0.112}* & \num{0.108}* \\
+& (\num{0.051}) & (\num{0.056}) & (\num{0.047}) \\
+Right vote 1936 & \num{0.148}** & \num{0.123}* & \num{0.127}** \\
+& (\num{0.051}) & (\num{0.049}) & (\num{0.047}) \\
+lambda &  & \num{0.434}*** &  \\
+&  & (\num{0.096}) &  \\
+rho &  &  & \num{0.429}*** \\
+&  &  & (\num{0.095}) \\
+Num.Obs. & \num{153} & \num{153} & \num{153} \\
+R2 & \num{0.060} &  &  \\
+R2 Adj. & \num{0.035} &  &  \\
+AIC & \num{1046.9} & \num{1033.1} & \num{1032.4} \\
+BIC & \num{1065.1} & \num{1054.4} & \num{1053.7} \\
+Log.Lik. & \num{-517.470} &  &  \\
+F & \num{2.361} &  &  \\
+RMSE & \num{7.12} & \num{6.62} & \num{6.61} \\
+\end{talltblr}
+\end{table}
