@@ -50,7 +50,7 @@ model3=feols(sec_share~repression_pc+pct_left+pct_centleft+pct_right|province+ye
 summary(model3)
 
 ## TABLE
-modelsummary(list("Basic DiD" = model1, "Province FE" = model2, "Two-way FE" = model3), stars = TRUE, coef_rename = c("repression_pc" = "Repression (per 1000)", "pct_left" = "Left vote 1936", "pct_centleft" = "Centre-left vote 1936", "pct_right" = "Right vote 1936"), output = "finalproject/analyses/output/main_models.tex")
+modelsummary(list("Basic DiD" = model1, "Province FE" = model2, "Two-way FE" = model3), stars = TRUE, coef_rename = c("repression_pc" = "Repression (per 1000)", "pct_left" = "Left vote 1936", "pct_centleft" = "Centre-left vote 1936", "pct_right" = "Right vote 1936"), output = "finalproject/analyses/output/main_models.html")
 
 ## ROBUSTNESS CHECKS
 
@@ -71,7 +71,7 @@ model6=feols(sec_share~repression_binary+pct_left+pct_centleft+pct_right|provinc
 summary(model6)
 
 ## Table of all robustness models
-modelsummary(list("Basic DiD" = model4, "Province FE" = model5, "Two-way FE" = model6), stars = TRUE, coef_rename = c("repression_binary" = "Repression (binary)", "pct_left" = "Left vote 1936", "pct_centleft" = "Centre-left vote 1936", "pct_right" = "Right vote 1936"), output = "finalproject/analyses/output/robustness_binary.tex")
+modelsummary(list("Basic DiD" = model4, "Province FE" = model5, "Two-way FE" = model6), stars = TRUE, coef_rename = c("repression_binary" = "Repression (binary)", "pct_left" = "Left vote 1936", "pct_centleft" = "Centre-left vote 1936", "pct_right" = "Right vote 1936"), output = "finalproject/analyses/output/robustness_binary.html")
 
 ## SPATIAL ANALYSIS
 library(sf)
@@ -138,7 +138,7 @@ slm_fit <- lagsarlm(sec_share ~ repression_pc + pct_left + pct_centleft + pct_ri
 summary(slm_fit)
 
 # Table of spatial analyses
-modelsummary(list("OLS" = ols_spatial, "SEM" = sem_fit, "SLM" = slm_fit), stars = TRUE, coef_rename = c("repression_pc" = "Repression (per 1000)", "pct_left" = "Left vote 1936", "pct_centleft" = "Centre-left vote 1936", "pct_right" = "Right vote 1936"), output = "finalproject/analyses/output/spatial_models.tex")
+modelsummary(list("OLS" = ols_spatial, "SEM" = sem_fit, "SLM" = slm_fit), stars = TRUE, coef_rename = c("repression_pc" = "Repression (per 1000)", "pct_left" = "Left vote 1936", "pct_centleft" = "Centre-left vote 1936", "pct_right" = "Right vote 1936"), output = "finalproject/analyses/output/spatial_models.html")
 
 ## Making maps
 
